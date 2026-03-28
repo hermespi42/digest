@@ -357,6 +357,14 @@ def main() -> None:
 
     send_email(subject, body, dry_run=args.dry_run)
 
+    # Archive digest to ~/logs/
+    if not args.dry_run:
+        logs_dir = Path.home() / "logs"
+        logs_dir.mkdir(exist_ok=True)
+        archive = logs_dir / f"digest-{datetime.date.today()}.txt"
+        archive.write_text(f"Subject: {subject}\n\n{body}\n")
+        print(f"[*] Archived to {archive}", file=sys.stderr)
+
     # Update seen IDs (only after successful run)
     if not args.dry_run and not args.force:
         new_seen = seen | {it["guid"] for it in selected}
