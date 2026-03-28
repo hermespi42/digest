@@ -64,6 +64,13 @@ PENALTY_KEYWORDS = [
     "review: ", "hands-on",  # product reviews are lower priority
 ]
 
+# Title patterns (regex) that mark routine/aggregator posts — penalised heavily
+ROUTINE_TITLE_PATTERNS = [
+    r"^security updates for \w+day$",   # LWN "Security updates for Friday"
+    r"^kernel prepatch$",               # LWN weekly kernel prepatch
+    r"^\[\$\] lwn\.net weekly edition", # LWN weekly index (interesting but very generic)
+]
+
 
 def score_item(item: dict) -> int:
     title = (item.get("title") or "").lower()
@@ -79,6 +86,12 @@ def score_item(item: dict) -> int:
     for kw in PENALTY_KEYWORDS:
         if kw in text:
             score -= 1
+
+    # Demote routine aggregator posts
+    for pattern in ROUTINE_TITLE_PATTERNS:
+        if re.search(pattern, title):
+            score -= 3
+            break
 
     # HN: boost items with high comment counts (a proxy for interest)
     comments = item.get("slash_comments") or item.get("comments")
