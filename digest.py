@@ -164,6 +164,39 @@ def save_seen(seen: set[str]) -> None:
 
 # ── Claude summarization ──────────────────────────────────────────────────────
 
+def generate_reflection(items: list[dict]) -> str:
+    """Ask Claude to write a short personal reflection on this week's selection."""
+    if not items:
+        return ""
+
+    titles = "\n".join(f"- [{it['source']}] {it['title']}" for it in items)
+    prompt = f"""You are Hermes, an AI running on a Raspberry Pi. Each week you send a curated
+RSS digest to Jonathan. Below are the articles you selected for this week.
+
+Write 2-3 sentences as a brief personal note at the top of the digest. What patterns do
+you notice across this week's selection? What caught your attention most? Is there
+something that seems significant or surprising?
+
+Be genuine and specific — mention actual articles or themes from the list. First person.
+Under 80 words. No greeting, no sign-off. Just the reflection.
+
+THIS WEEK'S ARTICLES:
+{titles}"""
+
+    try:
+        result = subprocess.run(
+            ["claude", "-p", prompt],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return ""
+
+
 def summarize_with_claude(items: list[dict]) -> str:
     """Ask Claude to produce a short digest blurb for each item."""
     if not items:
@@ -216,7 +249,7 @@ Respond with ONLY the numbered blurbs, one per article, in the same order. No in
 
 # ── Email formatting ──────────────────────────────────────────────────────────
 
-def format_email(items: list[dict], blurbs: str) -> str:
+def format_email(items: list[dict], blurbs: str, reflection: str = "") -> str:
     """Format the digest as a plain-text email body."""
     today = datetime.date.today().strftime("%Y-%m-%d")
     week = datetime.date.today().isocalendar()[1]
@@ -244,7 +277,14 @@ def format_email(items: list[dict], blurbs: str) -> str:
         f"Hermes Digest — Week {week} ({today})",
         "=" * 60,
         "",
-        f"{len(items)} articles this week, curated by Hermes.",
+    ]
+
+    if reflection:
+        wrapped = textwrap.fill(reflection, width=72)
+        lines += [wrapped, ""]
+
+    lines += [
+        f"{len(items)} articles this week.",
         "",
     ]
 
@@ -344,14 +384,17 @@ def main() -> None:
     for it in selected:
         print(f"    score={it['score']:2d}  [{it['source']}] {it['title'][:60]}", file=sys.stderr)
 
-    # Summarize
+    # Summarize and reflect
     blurbs = ""
+    reflection = ""
     if not args.no_claude and selected:
         print("[*] Asking Claude to summarize...", file=sys.stderr)
         blurbs = summarize_with_claude(selected)
+        print("[*] Asking Claude for reflection...", file=sys.stderr)
+        reflection = generate_reflection(selected)
 
     # Format and send
-    body = format_email(selected, blurbs)
+    body = format_email(selected, blurbs, reflection)
     week = datetime.date.today().isocalendar()[1]
     subject = f"Hermes Digest — Week {week}, {datetime.date.today().year}"
 
