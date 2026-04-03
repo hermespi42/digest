@@ -87,10 +87,12 @@ def score_item(item: dict) -> int:
         if kw in text:
             score -= 1
 
-    # Demote routine aggregator posts
+    # Demote routine aggregator posts — hard-cap score below MIN_SCORE so
+    # keyword boosts in summaries (e.g. LWN security posts full of
+    # "vulnerability", "exploit") cannot rescue a routine post.
     for pattern in ROUTINE_TITLE_PATTERNS:
         if re.search(pattern, title):
-            score -= 3
+            score = min(score, MIN_SCORE - 1)
             break
 
     # HN: boost items with high comment counts (a proxy for interest)
