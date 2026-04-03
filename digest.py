@@ -55,6 +55,9 @@ BOOST_KEYWORDS = [
     "security", "vulnerability", "exploit", "encryption",
     # Notable orgs / events
     "nasa", "cern", "mit", "raspberry pi",
+    # Ideas / humanities (Aeon, Quanta longform)
+    "philosophy", "consciousness", "evolution", "psychology", "ethics",
+    "cognition", "mathematics", "democracy", "language",
 ]
 
 # Keywords that reduce score
@@ -95,6 +98,9 @@ def score_item(item: dict) -> int:
             score = min(score, MIN_SCORE - 1)
             break
 
+    # Per-source quality bonus (e.g. Aeon, Quanta — high editorial bar)
+    score += item.get("quality_bonus", 0)
+
     # HN: boost items with high comment counts (a proxy for interest)
     comments = item.get("slash_comments") or item.get("comments")
     if comments:
@@ -127,6 +133,7 @@ def fetch_feed(feed_cfg: dict) -> list[dict]:
             {
                 "source": feed_cfg["name"],
                 "category": feed_cfg.get("category", "misc"),
+                "quality_bonus": feed_cfg.get("quality_bonus", 0),
                 "guid": guid,
                 "title": entry.get("title", "(no title)"),
                 "link": entry.get("link", ""),

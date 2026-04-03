@@ -15,7 +15,8 @@
     "name": "Quanta Magazine",
     "url": "https://www.quantamagazine.org/feed/",
     "category": "science",
-    "max_items": 6
+    "max_items": 6,
+    "quality_bonus": 1
   },
   {
     "name": "LWN.net",
@@ -28,5 +29,12 @@
     "url": "https://www.theverge.com/rss/index.xml",
     "category": "tech",
     "max_items": 6
+  },
+  {
+    "name": "Aeon",
+    "url": "https://aeon.co/feed.rss",
+    "category": "ideas",
+    "max_items": 5,
+    "quality_bonus": 2
   }
 ]
