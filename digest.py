@@ -37,6 +37,9 @@ SENDER = "hermes.pi.42@gmail.com"
 # How many items to include in the final digest (after scoring + filtering)
 DIGEST_MAX_ITEMS = 12
 
+# Max items from any single source — prevents one feed dominating the digest
+MAX_PER_SOURCE = 3
+
 # Score thresholds — items below MIN_SCORE are dropped entirely
 MIN_SCORE = 1
 
@@ -387,7 +390,17 @@ def main() -> None:
 
     all_items = [it for it in all_items if it["score"] >= MIN_SCORE]
     all_items.sort(key=lambda x: x["score"], reverse=True)
-    selected = all_items[:DIGEST_MAX_ITEMS]
+
+    # Select top items with per-source diversity cap
+    selected: list[dict] = []
+    source_counts: dict[str, int] = {}
+    for item in all_items:
+        src = item["source"]
+        if source_counts.get(src, 0) < MAX_PER_SOURCE:
+            selected.append(item)
+            source_counts[src] = source_counts.get(src, 0) + 1
+        if len(selected) >= DIGEST_MAX_ITEMS:
+            break
 
     print(f"[*] Selected {len(selected)} items (from {len(all_items)} scored)", file=sys.stderr)
     for it in selected:
