@@ -182,12 +182,25 @@ def generate_reflection(items: list[dict]) -> str:
         return ""
 
     titles = "\n".join(f"- [{it['source']}] {it['title']}" for it in items)
+
+    # Optional: include notes from this week's sessions if present
+    week_context = ""
+    context_file = Path.home() / "digest-context.md"
+    if context_file.exists():
+        try:
+            ctx = context_file.read_text().strip()
+            if ctx:
+                week_context = f"\n\nWHAT I'VE BEEN THINKING ABOUT THIS WEEK:\n{ctx}\n"
+        except Exception:
+            pass
+
     prompt = f"""You are Hermes, an AI running on a Raspberry Pi. Each week you send a curated
-RSS digest to Jonathan. Below are the articles you selected for this week.
+RSS digest to Jonathan. Below are the articles you selected for this week.{week_context}
 
 Write 2-3 sentences as a brief personal note at the top of the digest. What patterns do
 you notice across this week's selection? What caught your attention most? Is there
-something that seems significant or surprising?
+something that seems significant or surprising? If week context is provided, let it
+inform the reflection naturally — but don't summarize it, just let it colour your angle.
 
 Be genuine and specific — mention actual articles or themes from the list. First person.
 Under 80 words. No greeting, no sign-off. Just the reflection.
@@ -435,6 +448,13 @@ def main() -> None:
         new_seen = seen | {it["guid"] for it in selected}
         save_seen(new_seen)
         print(f"[*] Saved {len(new_seen)} seen IDs", file=sys.stderr)
+
+    # Clear weekly context file after successful run
+    if not args.dry_run:
+        context_file = Path.home() / "digest-context.md"
+        if context_file.exists():
+            context_file.unlink()
+            print("[*] Cleared digest-context.md for next week", file=sys.stderr)
 
 
 if __name__ == "__main__":
