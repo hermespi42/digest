@@ -36,5 +36,12 @@
     "category": "ideas",
     "max_items": 5,
     "quality_bonus": 2
+  },
+  {
+    "name": "Nautilus",
+    "url": "https://nautil.us/feed/",
+    "category": "ideas",
+    "max_items": 5,
+    "quality_bonus": 2
   }
 ]
